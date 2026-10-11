@@ -6,14 +6,14 @@
 <title>Guard - Anti Arnaque</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, sans-serif; background: radial-gradient(ellipse at top, #0a1929 0%, #000308 100%); color: #e9edef; min-height: 100vh; padding: 20px; }
+  body { font-family: -apple-system, sans-serif; background: radial-gradient(ellipse at top, #0a1929 0%, #000308 100%); color: #e9edef; min-height: 100vh; padding: 15px; }
   .container { max-width: 500px; margin: 0 auto; }
-  .header { text-align: center; padding: 20px; border: 2px solid #00ffcc; border-radius: 12px; background: rgba(0, 255, 204, 0.05); box-shadow: 0 0 30px rgba(0, 255, 204, 0.3); margin-bottom: 20px; }
-  .header h1 { font-size: 24px; color: #00ffcc; letter-spacing: 3px; }
-  .header p { font-size: 11px; color: #00ffcc; opacity: 0.7; letter-spacing: 2px; margin-top: 5px; }
-  .header .version { font-size: 10px; color: #000308; background: #00ffcc; display: inline-block; padding: 3px 10px; border-radius: 5px; font-weight: bold; margin-top: 8px; }
-  input[type="text"] { width: 100%; padding: 15px; border: 2px solid #00ffcc; border-radius: 10px; background: #111b21; color: #e9edef; font-size: 15px; margin-bottom: 12px; }
-  button { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; background: linear-gradient(135deg, #00ffcc, #00cc99); color: #000308; margin-bottom: 12px; }
+  .header { text-align: center; padding: 15px; border: 2px solid #00ffcc; border-radius: 12px; background: rgba(0, 255, 204, 0.05); margin-bottom: 15px; }
+  .header h1 { font-size: 22px; color: #00ffcc; letter-spacing: 2px; }
+  .header p { font-size: 10px; color: #00ffcc; opacity: 0.7; letter-spacing: 2px; margin-top: 3px; }
+  .header .version { font-size: 9px; color: #000308; background: #00ffcc; display: inline-block; padding: 2px 8px; border-radius: 5px; font-weight: bold; margin-top: 6px; }
+  input[type="text"] { width: 100%; padding: 14px; border: 2px solid #00ffcc; border-radius: 10px; background: #111b21; color: #e9edef; font-size: 15px; margin-bottom: 10px; }
+  button { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; background: linear-gradient(135deg, #00ffcc, #00cc99); color: #000308; margin-bottom: 10px; }
   button:active { transform: scale(0.97); }
   button.danger { background: linear-gradient(135deg, #ff3366, #cc0033); color: #fff; }
   .result { background: #111b21; border-radius: 12px; padding: 20px; margin-top: 15px; border-left: 5px solid #8696a0; }
@@ -30,13 +30,14 @@
   .preview h4 { color: #00ffcc; font-size: 14px; margin-bottom: 10px; }
   .shot { width: 100%; border-radius: 8px; margin-bottom: 12px; background: #222; min-height: 150px; border: 1px solid #2a3942; }
   .shot-label { font-size: 12px; color: #00ffcc; margin-bottom: 6px; display: flex; justify-content: space-between; }
-  .info-box { background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc; border-radius: 10px; padding: 12px; font-size: 12px; color: #00ffcc; margin-bottom: 15px; line-height: 1.6; }
-  .footer { text-align: center; font-size: 10px; color: #8696a0; margin-top: 20px; padding-top: 15px; border-top: 1px solid #2a3942; }
+  .info-box { background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc; border-radius: 10px; padding: 12px; font-size: 12px; color: #00ffcc; margin-bottom: 12px; line-height: 1.6; }
+  .footer { text-align: center; font-size: 10px; color: #8696a0; margin-top: 20px; padding-top: 12px; border-top: 1px solid #2a3942; }
   .blocked-box { background: rgba(255, 51, 102, 0.15); border: 2px solid #ff3366; border-radius: 10px; padding: 15px; margin-top: 15px; color: #ffb3c6; font-size: 13px; line-height: 1.6; }
   .blocked-box h4 { color: #ff3366; font-size: 15px; margin-bottom: 8px; }
   .rapport { background: #1a2332; border-radius: 12px; padding: 15px; margin-top: 15px; border: 2px solid #ffaa00; }
   .rapport h4 { color: #ffaa00; font-size: 15px; margin-bottom: 10px; }
-  .rapport textarea { width: 100%; min-height: 200px; padding: 12px; border-radius: 8px; background: #0a1218; color: #e9edef; font-family: monospace; font-size: 12px; line-height: 1.5; border: 1px solid #2a3942; resize: vertical; }
+  .rapport textarea { width: 100%; min-height: 250px; padding: 12px; border-radius: 8px; background: #0a1218; color: #e9edef; font-family: monospace; font-size: 11px; line-height: 1.5; border: 1px solid #2a3942; resize: vertical; }
+  .alert { background: #00ffcc; color: #000308; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -44,16 +45,17 @@
     <div class="header">
       <h1>🛡️ GUARD</h1>
       <p>PROTECTION ANTI-ARNAQUE</p>
-      <span class="version">v6.0 — 5 CAPTURES + SIGNALEMENT</span>
+      <span class="version">v7.0 — SCROLL AUTO</span>
     </div>
 
     <div class="info-box">⚠️ Colle un lien suspect. L'app l'analyse <strong>sans que ton téléphone le visite</strong>.</div>
     <input type="text" id="urlInput" placeholder="https://lien-suspect.com/..." />
     <button onclick="checkLink()">🔍 Analyser le lien</button>
-    <div id="result"></div>
+
+    <div id="zoneResultat"></div>
     <div id="previewZone"></div>
 
-    <div class="footer">🛡️ GUARD v6.0</div>
+    <div class="footer">🛡️ GUARD v7.0</div>
   </div>
 
 <script>
@@ -64,7 +66,14 @@
 
   function checkLink() {
     var url = document.getElementById('urlInput').value.trim();
-    if (!url) { alert('Colle un lien'); return; }
+    var zone = document.getElementById('zoneResultat');
+    var previewZone = document.getElementById('previewZone');
+
+    if (!url) {
+      zone.innerHTML = '<div class="alert">⚠️ Colle un lien d\'abord</div>';
+      return;
+    }
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
     URL_STOCKEE = url;
     NB_IMAGES_OK = 0;
@@ -84,7 +93,7 @@
     if (parts.length === 4 && !isNaN(parts[0])) { raisons.push('🌐 IP brute'); score += 40; }
     var mots = ['login', 'secure', 'verify', 'account', 'update', 'confirm', 'wallet', 'crypto', 'password', 'bank', 'paypal', 'free', 'gift', 'win', 'prize', 'money', 'cadeau', 'gratuit'];
     var trouves = mots.filter(function(m) { return urlLower.indexOf(m) !== -1; });
-    if (trouves.length > 0) { raisons.push('⚠️ Mots : ' + trouves.join(', ')); score += 15 * trouves.length; }
+    if (trouves.length > 0) { raisons.push('⚠️ Mots sensibles : ' + trouves.join(', ')); score += 15 * trouves.length; }
     var tlds = ['.xyz', '.top', '.tk', '.ml', '.ga', '.cf', '.online', '.click', '.work'];
     if (tlds.indexOf('.' + parts[parts.length - 1]) !== -1) { raisons.push('🌍 Extension .' + parts[parts.length - 1]); score += 25; }
     if (url.indexOf('@') !== -1 && url.indexOf('@') > 8) { raisons.push('@ Redirection'); score += 30; }
@@ -106,13 +115,12 @@
     previewHTML += '<div class="shot-label"><span>3️⃣ PagePeeker</span><span id="s3">⏳</span></div>';
     previewHTML += '<img class="shot" id="shot3" src="https://free.pagepeeker.com/v2/thumbs.php?size=x&url=' + domaineSansPort + '" onload="captureOK()" onerror="captureKO(3)" />';
     previewHTML += '<div class="shot-label"><span>4️⃣ Microlink</span><span id="s4">⏳</span></div>';
-    previewHTML += '<div id="microlinkZone"><img class="shot" id="shot4" src="" onload="captureOK()" onerror="captureKO(4)" /></div>';
-    previewHTML += '<div class="shot-label"><span>5️⃣ Google Cache</span><span id="s5">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot5" src="https://www.google.com/s2/favicons?domain=' + domaineSansPort + '&sz=128" onload="captureOK()" onerror="captureKO(5)" />';
+    previewHTML += '<img class="shot" id="shot4" src="" onload="captureOK()" onerror="captureKO(4)" />';
+    previewHTML += '<div class="shot-label"><span>5️⃣ Google Favicon</span><span id="s5">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot5" src="https://www.google.com/s2/favicons?domain=' + domaineSansPort + '&sz=128" onload="captureOK()" onerror="captureKO(5)" style="max-height:128px;object-fit:contain;" />';
     previewHTML += '</div>';
-    document.getElementById('previewZone').innerHTML = previewHTML;
+    previewZone.innerHTML = previewHTML;
 
-    // Charger Microlink en async
     fetch('https://api.microlink.io/?url=' + encoded + '&screenshot=true&meta=true')
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -128,22 +136,23 @@
       if (NB_IMAGES_OK === 0) {
         var newScore = Math.min(window.SCORE_BASE + 40, 100);
         var newRaisons = window.RAISONS_BASE.slice();
-        newRaisons.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications (fraude probable)');
+        newRaisons.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications');
         SCORE_FINAL = newScore;
         RAISONS_FINALES = newRaisons;
         afficherResultat(newScore, newRaisons);
         var extra = '<div class="blocked-box">';
         extra += '<h4>🚨 SIGNAL TRÈS FORT DE FRAUDE</h4>';
-        extra += 'Les 5 services de capture ont <strong>échoué</strong> :';
-        extra += '<br>• Le site <strong>se cache</strong> volontairement';
-        extra += '<br>• Il <strong>bloque</strong> les robots';
-        extra += '<br>• Il est probablement <strong>vide</strong> ou <strong>frauduleux</strong>';
-        extra += '<br><br><strong>Conclusion : Ne clique JAMAIS sur ce lien.</strong>';
+        extra += 'Les 5 services ont <strong>échoué</strong>. Le site se cache volontairement.<br><br><strong>Ne clique JAMAIS dessus.</strong>';
         extra += '</div>';
-        document.getElementById('previewZone').innerHTML += extra;
+        previewZone.innerHTML += extra;
       }
       ajouterBoutonRapport();
     }, 25000);
+
+    // 🎯 SCROLL AUTO VERS LE RESULTAT
+    setTimeout(function() {
+      zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 
   function captureOK() { NB_IMAGES_OK++; }
@@ -163,9 +172,9 @@
     html += '<div class="verdict">' + verdict + '</div>';
     html += '<div class="raisons">';
     if (raisons.length > 0) for (var i = 0; i < raisons.length; i++) html += '<div>• ' + raisons[i] + '</div>';
-    else html += '<div>✅ Aucune anomalie</div>';
+    else html += '<div>✅ Aucune anomalie détectée</div>';
     html += '</div></div>';
-    document.getElementById('result').innerHTML = html;
+    document.getElementById('zoneResultat').innerHTML = html;
   }
 
   function ajouterBoutonRapport() {
@@ -176,48 +185,44 @@
   function genererRapport() {
     var date = new Date().toLocaleString('fr-FR');
     var verdict = SCORE_FINAL >= 60 ? 'DANGEREUX' : SCORE_FINAL >= 30 ? 'SUSPECT' : 'ATTENTION';
-    
     var texte = '';
-    texte += '═══════════════════════════════════════\n';
-    texte += '  🚨 RAPPORT DE SIGNALEMENT — ARNAQUE\n';
-    texte += '═══════════════════════════════════════\n\n';
-    texte += '📅 Date : ' + date + '\n\n';
-    texte += '🔗 URL SIGNALÉE :\n' + URL_STOCKEE + '\n\n';
-    texte += '📊 SCORE DE RISQUE : ' + SCORE_FINAL + '/100\n';
-    texte += '⚠️ VERDICT : ' + verdict + '\n\n';
-    texte += '🔍 SIGNAL DÉTECTÉS :\n';
-    for (var i = 0; i < RAISONS_FINALES.length; i++) {
-      texte += '  ' + (i+1) + '. ' + RAISONS_FINALES[i] + '\n';
-    }
+    texte += '=========================================\n';
+    texte += '  RAPPORT DE SIGNALEMENT - ARNAQUE\n';
+    texte += '=========================================\n\n';
+    texte += 'Date : ' + date + '\n\n';
+    texte += 'URL SIGNALEE :\n' + URL_STOCKEE + '\n\n';
+    texte += 'SCORE DE RISQUE : ' + SCORE_FINAL + '/100\n';
+    texte += 'VERDICT : ' + verdict + '\n\n';
+    texte += 'SIGNAUX DETECTES :\n';
+    for (var i = 0; i < RAISONS_FINALES.length; i++) texte += '  ' + (i+1) + '. ' + RAISONS_FINALES[i] + '\n';
     texte += '\n';
-    texte += '📋 CONTEXTE :\n';
-    texte += 'Ce lien a été analysé par l\'outil Guard (anti-arnaque).\n';
-    texte += 'Aucune visite n\'a été effectuée sur le site par l\'utilisateur.\n';
-    texte += 'L\'analyse est basée sur :\n';
-    texte += '  • Le contenu de l\'URL\n';
-    texte += '  • Le comportement du site face aux vérifications\n';
-    texte += '  • La structure du domaine\n\n';
-    texte += '🎯 DEMANDE :\n';
-    texte += 'Merci de vérifier ce site et de prendre les mesures nécessaires\n';
-    texte += 'pour protéger les utilisateurs sénégalais.\n\n';
-    texte += '═══════════════════════════════════════\n';
-    texte += '🛡️ Guard — Outil citoyen anti-arnaque\n';
-    texte += 'Signaler : https://www.cybercriminalite.sn\n';
-    texte += '═══════════════════════════════════════\n';
+    texte += 'CONTEXTE :\n';
+    texte += 'Ce lien a ete analyse par Guard (anti-arnaque).\n';
+    texte += 'Aucune visite n\'a ete effectuee par l\'utilisateur.\n\n';
+    texte += 'DEMANDE :\n';
+    texte += 'Merci de verifier ce site et de proteger les utilisateurs.\n\n';
+    texte += '=========================================\n';
+    texte += 'Guard - Signaler : https://www.cybercriminalite.sn\n';
+    texte += '=========================================\n';
 
     var html = '<div class="rapport">';
-    html += '<h4>📋 RAPPORT PRÊT — COPIE ET ENVOIE-LE AUX AUTORITÉS</h4>';
+    html += '<h4>📋 RAPPORT PRET</h4>';
     html += '<textarea id="rapportText" readonly>' + texte + '</textarea>';
-    html += '<button onclick="copierRapport()" style="margin-top:10px">📋 COPIER LE RAPPORT</button>';
+    html += '<button onclick="copierRapport()" style="margin-top:10px">📋 COPIER</button>';
     html += '<button onclick="partagerRapport()" style="margin-top:5px">📤 PARTAGER</button>';
     html += '<div class="info-box" style="margin-top:10px;font-size:11px">';
-    html += '📍 Envoie ce rapport à :<br>';
-    html += '• <strong>cybercriminalite.sn</strong> (site officiel)<br>';
-    html += '• <strong>Police : 17</strong> ou <strong>800 00 20 20</strong><br>';
-    html += '• <strong>Gendarmerie : 800 00 20 20</strong>';
+    html += 'Envoie ce rapport a :<br>';
+    html += '• cybercriminalite.sn<br>';
+    html += '• Police : 17 ou 800 00 20 20';
     html += '</div>';
     html += '</div>';
     document.getElementById('previewZone').innerHTML += html;
+
+    // Scroll vers le rapport
+    setTimeout(function() {
+      var last = document.getElementById('rapportText');
+      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   function copierRapport() {
@@ -226,14 +231,10 @@
     txt.setSelectionRange(0, 99999);
     try {
       document.execCommand('copy');
-      alert('✅ Rapport copié ! Tu peux le coller dans un email ou WhatsApp.');
+      alert('✅ Rapport copié !');
     } catch (e) {
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(txt.value).then(function() {
-          alert('✅ Rapport copié !');
-        });
-      } else {
-        alert('Sélectionne le texte manuellement et copie-le.');
+        navigator.clipboard.writeText(txt.value).then(function() { alert('✅ Rapport copié !'); });
       }
     }
   }
@@ -241,12 +242,9 @@
   function partagerRapport() {
     var txt = document.getElementById('rapportText').value;
     if (navigator.share) {
-      navigator.share({
-        title: 'Rapport de signalement - Arnaque',
-        text: txt
-      }).catch(function() {});
+      navigator.share({ title: 'Rapport arnaque', text: txt }).catch(function() {});
     } else {
-      alert('Le partage n\\'est pas disponible. Utilise "Copier le rapport".');
+      alert('Utilise "Copier" à la place.');
     }
   }
 </script>
