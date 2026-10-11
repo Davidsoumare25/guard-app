@@ -15,6 +15,7 @@
   input[type="text"] { width: 100%; padding: 15px; border: 2px solid #00ffcc; border-radius: 10px; background: #111b21; color: #e9edef; font-size: 15px; margin-bottom: 12px; }
   button { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; background: linear-gradient(135deg, #00ffcc, #00cc99); color: #000308; margin-bottom: 12px; }
   button:active { transform: scale(0.97); }
+  button.danger { background: linear-gradient(135deg, #ff3366, #cc0033); color: #fff; }
   .result { background: #111b21; border-radius: 12px; padding: 20px; margin-top: 15px; border-left: 5px solid #8696a0; }
   .result.ok { border-left-color: #00ffcc; }
   .result.warn { border-left-color: #ffaa00; }
@@ -33,6 +34,9 @@
   .footer { text-align: center; font-size: 10px; color: #8696a0; margin-top: 20px; padding-top: 15px; border-top: 1px solid #2a3942; }
   .blocked-box { background: rgba(255, 51, 102, 0.15); border: 2px solid #ff3366; border-radius: 10px; padding: 15px; margin-top: 15px; color: #ffb3c6; font-size: 13px; line-height: 1.6; }
   .blocked-box h4 { color: #ff3366; font-size: 15px; margin-bottom: 8px; }
+  .rapport { background: #1a2332; border-radius: 12px; padding: 15px; margin-top: 15px; border: 2px solid #ffaa00; }
+  .rapport h4 { color: #ffaa00; font-size: 15px; margin-bottom: 10px; }
+  .rapport textarea { width: 100%; min-height: 200px; padding: 12px; border-radius: 8px; background: #0a1218; color: #e9edef; font-family: monospace; font-size: 12px; line-height: 1.5; border: 1px solid #2a3942; resize: vertical; }
 </style>
 </head>
 <body>
@@ -40,7 +44,7 @@
     <div class="header">
       <h1>🛡️ GUARD</h1>
       <p>PROTECTION ANTI-ARNAQUE</p>
-      <span class="version">En ligne v1.0</span>
+      <span class="version">v6.0 — 5 CAPTURES + SIGNALEMENT</span>
     </div>
 
     <div class="info-box">⚠️ Colle un lien suspect. L'app l'analyse <strong>sans que ton téléphone le visite</strong>.</div>
@@ -49,19 +53,21 @@
     <div id="result"></div>
     <div id="previewZone"></div>
 
-    <div class="footer">🛡️ GUARD — Outil défensif</div>
+    <div class="footer">🛡️ GUARD v6.0</div>
   </div>
 
 <script>
   var URL_STOCKEE = '';
-  var IMAGES_LOADED = 0;
+  var SCORE_FINAL = 0;
+  var RAISONS_FINALES = [];
+  var NB_IMAGES_OK = 0;
 
   function checkLink() {
     var url = document.getElementById('urlInput').value.trim();
     if (!url) { alert('Colle un lien'); return; }
     if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
     URL_STOCKEE = url;
-    IMAGES_LOADED = 0;
+    NB_IMAGES_OK = 0;
 
     var raisons = [];
     var score = 0;
@@ -86,29 +92,49 @@
 
     window.SCORE_BASE = score;
     window.RAISONS_BASE = raisons.slice();
+    SCORE_FINAL = score;
+    RAISONS_FINALES = raisons.slice();
     afficherResultat(score, raisons);
 
     var encoded = encodeURIComponent(url);
     var previewHTML = '<div class="preview">';
-    previewHTML += '<h4>📸 Captures d\'écran (3 sources)</h4>';
+    previewHTML += '<h4>📸 5 captures d\'écran</h4>';
     previewHTML += '<div class="shot-label"><span>1️⃣ thum.io</span><span id="s1">⏳</span></div>';
     previewHTML += '<img class="shot" id="shot1" src="https://image.thum.io/get/width/800/crop/1200/noanimate/' + url + '" onload="captureOK()" onerror="captureKO(1)" />';
     previewHTML += '<div class="shot-label"><span>2️⃣ WordPress</span><span id="s2">⏳</span></div>';
     previewHTML += '<img class="shot" id="shot2" src="https://s0.wp.com/mshots/v1/' + encoded + '?w=800" onload="captureOK()" onerror="captureKO(2)" />';
     previewHTML += '<div class="shot-label"><span>3️⃣ PagePeeker</span><span id="s3">⏳</span></div>';
     previewHTML += '<img class="shot" id="shot3" src="https://free.pagepeeker.com/v2/thumbs.php?size=x&url=' + domaineSansPort + '" onload="captureOK()" onerror="captureKO(3)" />';
+    previewHTML += '<div class="shot-label"><span>4️⃣ Microlink</span><span id="s4">⏳</span></div>';
+    previewHTML += '<div id="microlinkZone"><img class="shot" id="shot4" src="" onload="captureOK()" onerror="captureKO(4)" /></div>';
+    previewHTML += '<div class="shot-label"><span>5️⃣ Google Cache</span><span id="s5">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot5" src="https://www.google.com/s2/favicons?domain=' + domaineSansPort + '&sz=128" onload="captureOK()" onerror="captureKO(5)" />';
     previewHTML += '</div>';
     document.getElementById('previewZone').innerHTML = previewHTML;
 
+    // Charger Microlink en async
+    fetch('https://api.microlink.io/?url=' + encoded + '&screenshot=true&meta=true')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 'success' && data.data.screenshot) {
+          document.getElementById('shot4').src = data.data.screenshot.url;
+        } else {
+          captureKO(4);
+        }
+      })
+      .catch(function() { captureKO(4); });
+
     setTimeout(function() {
-      if (IMAGES_LOADED === 0) {
-        var finalScore = Math.min(window.SCORE_BASE + 40, 100);
+      if (NB_IMAGES_OK === 0) {
+        var newScore = Math.min(window.SCORE_BASE + 40, 100);
         var newRaisons = window.RAISONS_BASE.slice();
         newRaisons.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications (fraude probable)');
-        afficherResultat(finalScore, newRaisons);
+        SCORE_FINAL = newScore;
+        RAISONS_FINALES = newRaisons;
+        afficherResultat(newScore, newRaisons);
         var extra = '<div class="blocked-box">';
         extra += '<h4>🚨 SIGNAL TRÈS FORT DE FRAUDE</h4>';
-        extra += 'Les 3 services de capture ont <strong>échoué</strong> :';
+        extra += 'Les 5 services de capture ont <strong>échoué</strong> :';
         extra += '<br>• Le site <strong>se cache</strong> volontairement';
         extra += '<br>• Il <strong>bloque</strong> les robots';
         extra += '<br>• Il est probablement <strong>vide</strong> ou <strong>frauduleux</strong>';
@@ -116,10 +142,11 @@
         extra += '</div>';
         document.getElementById('previewZone').innerHTML += extra;
       }
+      ajouterBoutonRapport();
     }, 25000);
   }
 
-  function captureOK() { IMAGES_LOADED++; }
+  function captureOK() { NB_IMAGES_OK++; }
   function captureKO(n) {
     var el = document.getElementById('s' + n);
     if (el) el.textContent = '❌ bloqué';
@@ -139,6 +166,88 @@
     else html += '<div>✅ Aucune anomalie</div>';
     html += '</div></div>';
     document.getElementById('result').innerHTML = html;
+  }
+
+  function ajouterBoutonRapport() {
+    var btn = '<button class="danger" onclick="genererRapport()">📋 GÉNÉRER UN RAPPORT DE SIGNALEMENT</button>';
+    document.getElementById('previewZone').innerHTML += btn;
+  }
+
+  function genererRapport() {
+    var date = new Date().toLocaleString('fr-FR');
+    var verdict = SCORE_FINAL >= 60 ? 'DANGEREUX' : SCORE_FINAL >= 30 ? 'SUSPECT' : 'ATTENTION';
+    
+    var texte = '';
+    texte += '═══════════════════════════════════════\n';
+    texte += '  🚨 RAPPORT DE SIGNALEMENT — ARNAQUE\n';
+    texte += '═══════════════════════════════════════\n\n';
+    texte += '📅 Date : ' + date + '\n\n';
+    texte += '🔗 URL SIGNALÉE :\n' + URL_STOCKEE + '\n\n';
+    texte += '📊 SCORE DE RISQUE : ' + SCORE_FINAL + '/100\n';
+    texte += '⚠️ VERDICT : ' + verdict + '\n\n';
+    texte += '🔍 SIGNAL DÉTECTÉS :\n';
+    for (var i = 0; i < RAISONS_FINALES.length; i++) {
+      texte += '  ' + (i+1) + '. ' + RAISONS_FINALES[i] + '\n';
+    }
+    texte += '\n';
+    texte += '📋 CONTEXTE :\n';
+    texte += 'Ce lien a été analysé par l\'outil Guard (anti-arnaque).\n';
+    texte += 'Aucune visite n\'a été effectuée sur le site par l\'utilisateur.\n';
+    texte += 'L\'analyse est basée sur :\n';
+    texte += '  • Le contenu de l\'URL\n';
+    texte += '  • Le comportement du site face aux vérifications\n';
+    texte += '  • La structure du domaine\n\n';
+    texte += '🎯 DEMANDE :\n';
+    texte += 'Merci de vérifier ce site et de prendre les mesures nécessaires\n';
+    texte += 'pour protéger les utilisateurs sénégalais.\n\n';
+    texte += '═══════════════════════════════════════\n';
+    texte += '🛡️ Guard — Outil citoyen anti-arnaque\n';
+    texte += 'Signaler : https://www.cybercriminalite.sn\n';
+    texte += '═══════════════════════════════════════\n';
+
+    var html = '<div class="rapport">';
+    html += '<h4>📋 RAPPORT PRÊT — COPIE ET ENVOIE-LE AUX AUTORITÉS</h4>';
+    html += '<textarea id="rapportText" readonly>' + texte + '</textarea>';
+    html += '<button onclick="copierRapport()" style="margin-top:10px">📋 COPIER LE RAPPORT</button>';
+    html += '<button onclick="partagerRapport()" style="margin-top:5px">📤 PARTAGER</button>';
+    html += '<div class="info-box" style="margin-top:10px;font-size:11px">';
+    html += '📍 Envoie ce rapport à :<br>';
+    html += '• <strong>cybercriminalite.sn</strong> (site officiel)<br>';
+    html += '• <strong>Police : 17</strong> ou <strong>800 00 20 20</strong><br>';
+    html += '• <strong>Gendarmerie : 800 00 20 20</strong>';
+    html += '</div>';
+    html += '</div>';
+    document.getElementById('previewZone').innerHTML += html;
+  }
+
+  function copierRapport() {
+    var txt = document.getElementById('rapportText');
+    txt.select();
+    txt.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      alert('✅ Rapport copié ! Tu peux le coller dans un email ou WhatsApp.');
+    } catch (e) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt.value).then(function() {
+          alert('✅ Rapport copié !');
+        });
+      } else {
+        alert('Sélectionne le texte manuellement et copie-le.');
+      }
+    }
+  }
+
+  function partagerRapport() {
+    var txt = document.getElementById('rapportText').value;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Rapport de signalement - Arnaque',
+        text: txt
+      }).catch(function() {});
+    } else {
+      alert('Le partage n\\'est pas disponible. Utilise "Copier le rapport".');
+    }
   }
 </script>
 </body>
