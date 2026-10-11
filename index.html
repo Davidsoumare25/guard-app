@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guard - Anti Arnaque</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: radial-gradient(ellipse at top, #0a1929 0%, #000308 100%); color: #e9edef; min-height: 100vh; padding: 20px; }
+  .container { max-width: 500px; margin: 0 auto; }
+  .header { text-align: center; padding: 20px; border: 2px solid #00ffcc; border-radius: 12px; background: rgba(0, 255, 204, 0.05); box-shadow: 0 0 30px rgba(0, 255, 204, 0.3); margin-bottom: 20px; }
+  .header h1 { font-size: 24px; color: #00ffcc; letter-spacing: 3px; }
+  .header p { font-size: 11px; color: #00ffcc; opacity: 0.7; letter-spacing: 2px; margin-top: 5px; }
+  .header .version { font-size: 10px; color: #000308; background: #00ffcc; display: inline-block; padding: 3px 10px; border-radius: 5px; font-weight: bold; margin-top: 8px; }
+  input[type="text"] { width: 100%; padding: 15px; border: 2px solid #00ffcc; border-radius: 10px; background: #111b21; color: #e9edef; font-size: 15px; margin-bottom: 12px; }
+  button { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; background: linear-gradient(135deg, #00ffcc, #00cc99); color: #000308; margin-bottom: 12px; }
+  button:active { transform: scale(0.97); }
+  .result { background: #111b21; border-radius: 12px; padding: 20px; margin-top: 15px; border-left: 5px solid #8696a0; }
+  .result.ok { border-left-color: #00ffcc; }
+  .result.warn { border-left-color: #ffaa00; }
+  .result.danger { border-left-color: #ff3366; }
+  .score { font-size: 40px; font-weight: bold; text-align: center; margin-bottom: 8px; color: #00ffcc; }
+  .result.warn .score { color: #ffaa00; }
+  .result.danger .score { color: #ff3366; }
+  .verdict { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+  .raisons { font-size: 14px; line-height: 1.8; color: #d1d7db; }
+  .raisons div { padding: 6px 0; }
+  .preview { background: #111b21; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #00ffcc; }
+  .preview h4 { color: #00ffcc; font-size: 14px; margin-bottom: 10px; }
+  .shot { width: 100%; border-radius: 8px; margin-bottom: 12px; background: #222; min-height: 150px; border: 1px solid #2a3942; }
+  .shot-label { font-size: 12px; color: #00ffcc; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .info-box { background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc; border-radius: 10px; padding: 12px; font-size: 12px; color: #00ffcc; margin-bottom: 15px; line-height: 1.6; }
+  .footer { text-align: center; font-size: 10px; color: #8696a0; margin-top: 20px; padding-top: 15px; border-top: 1px solid #2a3942; }
+  .blocked-box { background: rgba(255, 51, 102, 0.15); border: 2px solid #ff3366; border-radius: 10px; padding: 15px; margin-top: 15px; color: #ffb3c6; font-size: 13px; line-height: 1.6; }
+  .blocked-box h4 { color: #ff3366; font-size: 15px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ GUARD</h1>
+      <p>PROTECTION ANTI-ARNAQUE</p>
+      <span class="version">En ligne v1.0</span>
+    </div>
+
+    <div class="info-box">⚠️ Colle un lien suspect. L'app l'analyse <strong>sans que ton téléphone le visite</strong>.</div>
+    <input type="text" id="urlInput" placeholder="https://lien-suspect.com/..." />
+    <button onclick="checkLink()">🔍 Analyser le lien</button>
+    <div id="result"></div>
+    <div id="previewZone"></div>
+
+    <div class="footer">🛡️ GUARD — Outil défensif</div>
+  </div>
+
+<script>
+  var URL_STOCKEE = '';
+  var IMAGES_LOADED = 0;
+
+  function checkLink() {
+    var url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('Colle un lien'); return; }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
+    URL_STOCKEE = url;
+    IMAGES_LOADED = 0;
+
+    var raisons = [];
+    var score = 0;
+    var urlLower = url.toLowerCase();
+    var domainMatch = urlLower.match(/^https?:\/\/([^\/]+)/);
+    var domaine = domainMatch ? domainMatch[1] : urlLower;
+    var domaineSansPort = domaine.split(':')[0];
+
+    var raccourcisseurs = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'rebrand.ly', 'cutt.ly', 'rb.gy'];
+    for (var i = 0; i < raccourcisseurs.length; i++) {
+      if (domaineSansPort.indexOf(raccourcisseurs[i]) !== -1) { raisons.push('🔗 Raccourcisseur'); score += 30; break; }
+    }
+    var parts = domaineSansPort.split('.');
+    if (parts.length === 4 && !isNaN(parts[0])) { raisons.push('🌐 IP brute'); score += 40; }
+    var mots = ['login', 'secure', 'verify', 'account', 'update', 'confirm', 'wallet', 'crypto', 'password', 'bank', 'paypal', 'free', 'gift', 'win', 'prize', 'money', 'cadeau', 'gratuit'];
+    var trouves = mots.filter(function(m) { return urlLower.indexOf(m) !== -1; });
+    if (trouves.length > 0) { raisons.push('⚠️ Mots : ' + trouves.join(', ')); score += 15 * trouves.length; }
+    var tlds = ['.xyz', '.top', '.tk', '.ml', '.ga', '.cf', '.online', '.click', '.work'];
+    if (tlds.indexOf('.' + parts[parts.length - 1]) !== -1) { raisons.push('🌍 Extension .' + parts[parts.length - 1]); score += 25; }
+    if (url.indexOf('@') !== -1 && url.indexOf('@') > 8) { raisons.push('@ Redirection'); score += 30; }
+    if (urlLower.indexOf('coupon=') !== -1 || urlLower.indexOf('token=') !== -1) { raisons.push('🎟️ Paramètre promo'); score += 15; }
+
+    window.SCORE_BASE = score;
+    window.RAISONS_BASE = raisons.slice();
+    afficherResultat(score, raisons);
+
+    var encoded = encodeURIComponent(url);
+    var previewHTML = '<div class="preview">';
+    previewHTML += '<h4>📸 Captures d\'écran (3 sources)</h4>';
+    previewHTML += '<div class="shot-label"><span>1️⃣ thum.io</span><span id="s1">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot1" src="https://image.thum.io/get/width/800/crop/1200/noanimate/' + url + '" onload="captureOK()" onerror="captureKO(1)" />';
+    previewHTML += '<div class="shot-label"><span>2️⃣ WordPress</span><span id="s2">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot2" src="https://s0.wp.com/mshots/v1/' + encoded + '?w=800" onload="captureOK()" onerror="captureKO(2)" />';
+    previewHTML += '<div class="shot-label"><span>3️⃣ PagePeeker</span><span id="s3">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot3" src="https://free.pagepeeker.com/v2/thumbs.php?size=x&url=' + domaineSansPort + '" onload="captureOK()" onerror="captureKO(3)" />';
+    previewHTML += '</div>';
+    document.getElementById('previewZone').innerHTML = previewHTML;
+
+    setTimeout(function() {
+      if (IMAGES_LOADED === 0) {
+        var finalScore = Math.min(window.SCORE_BASE + 40, 100);
+        var newRaisons = window.RAISONS_BASE.slice();
+        newRaisons.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications (fraude probable)');
+        afficherResultat(finalScore, newRaisons);
+        var extra = '<div class="blocked-box">';
+        extra += '<h4>🚨 SIGNAL TRÈS FORT DE FRAUDE</h4>';
+        extra += 'Les 3 services de capture ont <strong>échoué</strong> :';
+        extra += '<br>• Le site <strong>se cache</strong> volontairement';
+        extra += '<br>• Il <strong>bloque</strong> les robots';
+        extra += '<br>• Il est probablement <strong>vide</strong> ou <strong>frauduleux</strong>';
+        extra += '<br><br><strong>Conclusion : Ne clique JAMAIS sur ce lien.</strong>';
+        extra += '</div>';
+        document.getElementById('previewZone').innerHTML += extra;
+      }
+    }, 25000);
+  }
+
+  function captureOK() { IMAGES_LOADED++; }
+  function captureKO(n) {
+    var el = document.getElementById('s' + n);
+    if (el) el.textContent = '❌ bloqué';
+  }
+
+  function afficherResultat(score, raisons) {
+    var verdict, classe;
+    if (score >= 60) { verdict = '🔴 DANGEREUX'; classe = 'danger'; }
+    else if (score >= 30) { verdict = '🟠 SUSPECT'; classe = 'warn'; }
+    else if (score >= 10) { verdict = '🟡 ATTENTION'; classe = 'warn'; }
+    else { verdict = '🟢 SEMBLE OK'; classe = 'ok'; }
+    var html = '<div class="result ' + classe + '">';
+    html += '<div class="score">' + score + '/100</div>';
+    html += '<div class="verdict">' + verdict + '</div>';
+    html += '<div class="raisons">';
+    if (raisons.length > 0) for (var i = 0; i < raisons.length; i++) html += '<div>• ' + raisons[i] + '</div>';
+    else html += '<div>✅ Aucune anomalie</div>';
+    html += '</div></div>';
+    document.getElementById('result').innerHTML = html;
+  }
+</script>
+</body>
+</html>
