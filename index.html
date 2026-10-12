@@ -36,8 +36,9 @@
   .blocked-box h4 { color: #ff3366; font-size: 15px; margin-bottom: 8px; }
   .rapport { background: #1a2332; border-radius: 12px; padding: 15px; margin-top: 15px; border: 2px solid #ffaa00; }
   .rapport h4 { color: #ffaa00; font-size: 15px; margin-bottom: 10px; }
-  .rapport textarea { width: 100%; min-height: 250px; padding: 12px; border-radius: 8px; background: #0a1218; color: #e9edef; font-family: monospace; font-size: 11px; line-height: 1.5; border: 1px solid #2a3942; resize: vertical; }
+  .rapport textarea { width: 100%; min-height: 250px; padding: 12px; border-radius: 8px; background: #0a1218; color: #e9edef; font-family: monospace; font-size: 11px; line-height: 1.5; border: 1px solid #2a3942; }
   .alert { background: #00ffcc; color: #000308; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+  .drainbot-badge { display: inline-block; padding: 3px 8px; background: rgba(0, 255, 204, 0.15); border-radius: 5px; font-size: 10px; color: #00ffcc; margin-bottom: 8px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -45,7 +46,7 @@
     <div class="header">
       <h1>🛡️ GUARD</h1>
       <p>PROTECTION ANTI-ARNAQUE</p>
-      <span class="version">v7.0 — SCROLL AUTO</span>
+      <span class="version">v8.0 — DRAINBOT INTÉGRÉ</span>
     </div>
 
     <div class="info-box">⚠️ Colle un lien suspect. L'app l'analyse <strong>sans que ton téléphone le visite</strong>.</div>
@@ -55,7 +56,7 @@
     <div id="zoneResultat"></div>
     <div id="previewZone"></div>
 
-    <div class="footer">🛡️ GUARD v7.0</div>
+    <div class="footer">🛡️ GUARD v8.0</div>
   </div>
 
 <script>
@@ -63,6 +64,7 @@
   var SCORE_FINAL = 0;
   var RAISONS_FINALES = [];
   var NB_IMAGES_OK = 0;
+  var DRAINBOT_URL = 'https://drainbot.onrender.com/analyze?url=';
 
   function checkLink() {
     var url = document.getElementById('urlInput').value.trim();
@@ -78,96 +80,94 @@
     URL_STOCKEE = url;
     NB_IMAGES_OK = 0;
 
+    zone.innerHTML = '<div class="alert">🤖 Analyse par DrainBot...</div>';
+    previewZone.innerHTML = '';
+
+    // 1. Appeler DrainBot
+    fetch(DRAINBOT_URL + encodeURIComponent(url))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var raisons = [];
+        var score = 0;
+
+        if (data.error) {
+          // DrainBot a échoué, on fait une analyse locale
+          analyseLocale(url, zone, previewZone);
+          return;
+        }
+
+        score = data.score || 0;
+        raisons = data.signaux || [];
+
+        // Ajouter les infos de DrainBot
+        if (data.title) raisons.push('📄 Titre : ' + data.title);
+        if (data.server) raisons.push('🖥️ Serveur : ' + data.server);
+        if (data.status_code) raisons.push('📊 Status : ' + data.status_code);
+        if (data.url_final && data.url_final !== data.url_original) {
+          raisons.push('🔄 Redirection : ' + data.url_final);
+        }
+
+        SCORE_FINAL = score;
+        RAISONS_FINALES = raisons;
+        afficherResultat(score, raisons, true);
+
+        // Lance les captures d'écran
+        lancerCaptures(url);
+
+        setTimeout(function() {
+          if (NB_IMAGES_OK === 0) {
+            var bonusScore = Math.min(SCORE_FINAL + 20, 100);
+            RAISONS_FINALES.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications');
+            SCORE_FINAL = bonusScore;
+            afficherResultat(bonusScore, RAISONS_FINALES, true);
+          }
+          ajouterBoutonRapport();
+        }, 25000);
+      })
+      .catch(function(e) {
+        // Si DrainBot inaccessible, analyse locale
+        console.log('Erreur DrainBot:', e);
+        analyseLocale(url, zone, previewZone);
+      });
+  }
+
+  function analyseLocale(url, zone, previewZone) {
     var raisons = [];
     var score = 0;
     var urlLower = url.toLowerCase();
-    var domainMatch = urlLower.match(/^https?:\/\/([^\/]+)/);
-    var domaine = domainMatch ? domainMatch[1] : urlLower;
-    var domaineSansPort = domaine.split(':')[0];
+    var parts = urlLower.replace(/^https?:\/\//, '').split('/')[0].split('.');
 
-    var raccourcisseurs = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'rebrand.ly', 'cutt.ly', 'rb.gy'];
-    for (var i = 0; i < raccourcisseurs.length; i++) {
-      if (domaineSansPort.indexOf(raccourcisseurs[i]) !== -1) { raisons.push('🔗 Raccourcisseur'); score += 30; break; }
-    }
-    var parts = domaineSansPort.split('.');
-    if (parts.length === 4 && !isNaN(parts[0])) { raisons.push('🌐 IP brute'); score += 40; }
-    var mots = ['login', 'secure', 'verify', 'account', 'update', 'confirm', 'wallet', 'crypto', 'password', 'bank', 'paypal', 'free', 'gift', 'win', 'prize', 'money', 'cadeau', 'gratuit'];
+    var mots = ['drain', 'wallet', 'metamask', 'crypto', 'airdrop', 'claim', 'login', 'verify', 'free', 'gift', 'win', 'prize'];
     var trouves = mots.filter(function(m) { return urlLower.indexOf(m) !== -1; });
     if (trouves.length > 0) { raisons.push('⚠️ Mots sensibles : ' + trouves.join(', ')); score += 15 * trouves.length; }
-    var tlds = ['.xyz', '.top', '.tk', '.ml', '.ga', '.cf', '.online', '.click', '.work'];
-    if (tlds.indexOf('.' + parts[parts.length - 1]) !== -1) { raisons.push('🌍 Extension .' + parts[parts.length - 1]); score += 25; }
-    if (url.indexOf('@') !== -1 && url.indexOf('@') > 8) { raisons.push('@ Redirection'); score += 30; }
-    if (urlLower.indexOf('coupon=') !== -1 || urlLower.indexOf('token=') !== -1) { raisons.push('🎟️ Paramètre promo'); score += 15; }
+    var tlds = ['.xyz', '.top', '.tk', '.ml', '.ga', '.cf', '.online', '.click'];
+    if (tlds.indexOf('.' + parts[parts.length - 1]) !== -1) { raisons.push('🌍 Extension suspecte'); score += 25; }
 
-    window.SCORE_BASE = score;
-    window.RAISONS_BASE = raisons.slice();
+    score = Math.min(score, 100);
     SCORE_FINAL = score;
-    RAISONS_FINALES = raisons.slice();
-    afficherResultat(score, raisons);
-
-    var encoded = encodeURIComponent(url);
-    var previewHTML = '<div class="preview">';
-    previewHTML += '<h4>📸 5 captures d\'écran</h4>';
-    previewHTML += '<div class="shot-label"><span>1️⃣ thum.io</span><span id="s1">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot1" src="https://image.thum.io/get/width/800/crop/1200/noanimate/' + url + '" onload="captureOK()" onerror="captureKO(1)" />';
-    previewHTML += '<div class="shot-label"><span>2️⃣ WordPress</span><span id="s2">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot2" src="https://s0.wp.com/mshots/v1/' + encoded + '?w=800" onload="captureOK()" onerror="captureKO(2)" />';
-    previewHTML += '<div class="shot-label"><span>3️⃣ PagePeeker</span><span id="s3">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot3" src="https://free.pagepeeker.com/v2/thumbs.php?size=x&url=' + domaineSansPort + '" onload="captureOK()" onerror="captureKO(3)" />';
-    previewHTML += '<div class="shot-label"><span>4️⃣ Microlink</span><span id="s4">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot4" src="" onload="captureOK()" onerror="captureKO(4)" />';
-    previewHTML += '<div class="shot-label"><span>5️⃣ Google Favicon</span><span id="s5">⏳</span></div>';
-    previewHTML += '<img class="shot" id="shot5" src="https://www.google.com/s2/favicons?domain=' + domaineSansPort + '&sz=128" onload="captureOK()" onerror="captureKO(5)" style="max-height:128px;object-fit:contain;" />';
-    previewHTML += '</div>';
-    previewZone.innerHTML = previewHTML;
-
-    fetch('https://api.microlink.io/?url=' + encoded + '&screenshot=true&meta=true')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.status === 'success' && data.data.screenshot) {
-          document.getElementById('shot4').src = data.data.screenshot.url;
-        } else {
-          captureKO(4);
-        }
-      })
-      .catch(function() { captureKO(4); });
+    RAISONS_FINALES = raisons;
+    afficherResultat(score, raisons, false);
+    lancerCaptures(url);
 
     setTimeout(function() {
       if (NB_IMAGES_OK === 0) {
-        var newScore = Math.min(window.SCORE_BASE + 40, 100);
-        var newRaisons = window.RAISONS_BASE.slice();
-        newRaisons.push('🚫 AUCUNE capture possible — le site BLOQUE les vérifications');
-        SCORE_FINAL = newScore;
-        RAISONS_FINALES = newRaisons;
-        afficherResultat(newScore, newRaisons);
-        var extra = '<div class="blocked-box">';
-        extra += '<h4>🚨 SIGNAL TRÈS FORT DE FRAUDE</h4>';
-        extra += 'Les 5 services ont <strong>échoué</strong>. Le site se cache volontairement.<br><br><strong>Ne clique JAMAIS dessus.</strong>';
-        extra += '</div>';
-        previewZone.innerHTML += extra;
+        SCORE_FINAL = Math.min(SCORE_FINAL + 20, 100);
+        RAISONS_FINALES.push('🚫 AUCUNE capture possible');
+        afficherResultat(SCORE_FINAL, RAISONS_FINALES, false);
       }
       ajouterBoutonRapport();
     }, 25000);
-
-    // 🎯 SCROLL AUTO VERS LE RESULTAT
-    setTimeout(function() {
-      zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   }
 
-  function captureOK() { NB_IMAGES_OK++; }
-  function captureKO(n) {
-    var el = document.getElementById('s' + n);
-    if (el) el.textContent = '❌ bloqué';
-  }
-
-  function afficherResultat(score, raisons) {
+  function afficherResultat(score, raisons, viaDrainBot) {
     var verdict, classe;
-    if (score >= 60) { verdict = '🔴 DANGEREUX'; classe = 'danger'; }
-    else if (score >= 30) { verdict = '🟠 SUSPECT'; classe = 'warn'; }
-    else if (score >= 10) { verdict = '🟡 ATTENTION'; classe = 'warn'; }
+    if (score >= 70) { verdict = '🔴 DANGEREUX'; classe = 'danger'; }
+    else if (score >= 40) { verdict = '🟠 SUSPECT'; classe = 'warn'; }
+    else if (score >= 15) { verdict = '🟡 ATTENTION'; classe = 'warn'; }
     else { verdict = '🟢 SEMBLE OK'; classe = 'ok'; }
+
     var html = '<div class="result ' + classe + '">';
+    if (viaDrainBot) html += '<span class="drainbot-badge">🤖 Analysé par DrainBot</span>';
     html += '<div class="score">' + score + '/100</div>';
     html += '<div class="verdict">' + verdict + '</div>';
     html += '<div class="raisons">';
@@ -177,6 +177,25 @@
     document.getElementById('zoneResultat').innerHTML = html;
   }
 
+  function lancerCaptures(url) {
+    var encoded = encodeURIComponent(url);
+    var domaine = url.replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+    var previewHTML = '<div class="preview">';
+    previewHTML += '<h4>📸 Captures d\'écran</h4>';
+    previewHTML += '<div class="shot-label"><span>1️⃣ thum.io</span><span id="s1">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot1" src="https://image.thum.io/get/width/800/crop/1200/noanimate/' + url + '" onload="captureOK()" onerror="captureKO(1)" />';
+    previewHTML += '<div class="shot-label"><span>2️⃣ WordPress</span><span id="s2">⏳</span></div>';
+    previewHTML += '<img class="shot" id="shot2" src="https://s0.wp.com/mshots/v1/' + encoded + '?w=800" onload="captureOK()" onerror="captureKO(2)" />';
+    previewHTML += '</div>';
+    document.getElementById('previewZone').innerHTML = previewHTML;
+  }
+
+  function captureOK() { NB_IMAGES_OK++; }
+  function captureKO(n) {
+    var el = document.getElementById('s' + n);
+    if (el) el.textContent = '❌';
+  }
+
   function ajouterBoutonRapport() {
     var btn = '<button class="danger" onclick="genererRapport()">📋 GÉNÉRER UN RAPPORT DE SIGNALEMENT</button>';
     document.getElementById('previewZone').innerHTML += btn;
@@ -184,7 +203,7 @@
 
   function genererRapport() {
     var date = new Date().toLocaleString('fr-FR');
-    var verdict = SCORE_FINAL >= 60 ? 'DANGEREUX' : SCORE_FINAL >= 30 ? 'SUSPECT' : 'ATTENTION';
+    var verdict = SCORE_FINAL >= 70 ? 'DANGEREUX' : SCORE_FINAL >= 40 ? 'SUSPECT' : 'ATTENTION';
     var texte = '';
     texte += '=========================================\n';
     texte += '  RAPPORT DE SIGNALEMENT - ARNAQUE\n';
@@ -197,12 +216,12 @@
     for (var i = 0; i < RAISONS_FINALES.length; i++) texte += '  ' + (i+1) + '. ' + RAISONS_FINALES[i] + '\n';
     texte += '\n';
     texte += 'CONTEXTE :\n';
-    texte += 'Ce lien a ete analyse par Guard (anti-arnaque).\n';
+    texte += 'Ce lien a ete analyse par Guard (anti-arnaque) + DrainBot.\n';
     texte += 'Aucune visite n\'a ete effectuee par l\'utilisateur.\n\n';
     texte += 'DEMANDE :\n';
     texte += 'Merci de verifier ce site et de proteger les utilisateurs.\n\n';
     texte += '=========================================\n';
-    texte += 'Guard - Signaler : https://www.cybercriminalite.sn\n';
+    texte += 'Signaler : https://www.cybercriminalite.sn\n';
     texte += '=========================================\n';
 
     var html = '<div class="rapport">';
@@ -210,42 +229,23 @@
     html += '<textarea id="rapportText" readonly>' + texte + '</textarea>';
     html += '<button onclick="copierRapport()" style="margin-top:10px">📋 COPIER</button>';
     html += '<button onclick="partagerRapport()" style="margin-top:5px">📤 PARTAGER</button>';
-    html += '<div class="info-box" style="margin-top:10px;font-size:11px">';
-    html += 'Envoie ce rapport a :<br>';
-    html += '• cybercriminalite.sn<br>';
-    html += '• Police : 17 ou 800 00 20 20';
-    html += '</div>';
     html += '</div>';
     document.getElementById('previewZone').innerHTML += html;
-
-    // Scroll vers le rapport
-    setTimeout(function() {
-      var last = document.getElementById('rapportText');
-      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
   }
 
   function copierRapport() {
     var txt = document.getElementById('rapportText');
     txt.select();
     txt.setSelectionRange(0, 99999);
-    try {
-      document.execCommand('copy');
-      alert('✅ Rapport copié !');
-    } catch (e) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(txt.value).then(function() { alert('✅ Rapport copié !'); });
-      }
+    try { document.execCommand('copy'); alert('✅ Copié !'); } catch (e) {
+      if (navigator.clipboard) navigator.clipboard.writeText(txt.value).then(function() { alert('✅ Copié !'); });
     }
   }
 
   function partagerRapport() {
     var txt = document.getElementById('rapportText').value;
-    if (navigator.share) {
-      navigator.share({ title: 'Rapport arnaque', text: txt }).catch(function() {});
-    } else {
-      alert('Utilise "Copier" à la place.');
-    }
+    if (navigator.share) navigator.share({ title: 'Rapport arnaque', text: txt }).catch(function() {});
+    else alert('Utilise "Copier".');
   }
 </script>
 </body>
