@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dakivox</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: radial-gradient(ellipse at top, #1a0010 0%, #000308 100%); color: #e9edef; min-height: 100vh; padding: 15px; }
+  .container { max-width: 500px; margin: 0 auto; }
+  .header { text-align: center; padding: 15px; border: 2px solid #ff0080; border-radius: 12px; background: rgba(255, 0, 128, 0.05); margin-bottom: 15px; box-shadow: 0 0 20px rgba(255, 0, 128, 0.3); }
+  .header h1 { font-size: 22px; color: #ff0080; letter-spacing: 3px; }
+  .header p { font-size: 10px; color: #ff0080; opacity: 0.7; letter-spacing: 2px; margin-top: 3px; }
+  input[type="text"], input[type="password"] { width: 100%; padding: 14px; border: 2px solid #ff0080; border-radius: 10px; background: #111b21; color: #e9edef; font-size: 15px; margin-bottom: 10px; }
+  button { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; background: linear-gradient(135deg, #ff0080, #cc0066); color: #fff; margin-bottom: 10px; }
+  button:active { transform: scale(0.97); }
+  button.secondary { background: linear-gradient(135deg, #00ffcc, #00cc99); color: #000308; }
+  button.ghost { background: transparent; border: 2px solid #ff0080; color: #ff0080; }
+  .info-box { background: rgba(255, 0, 128, 0.05); border: 1px dashed #ff0080; border-radius: 10px; padding: 12px; font-size: 12px; color: #ff0080; margin-bottom: 12px; line-height: 1.6; }
+  .result { background: #111b21; border-radius: 12px; padding: 20px; margin-top: 15px; border-left: 5px solid #ff0080; }
+  .score { font-size: 40px; font-weight: bold; text-align: center; color: #ff0080; }
+  .verdict { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+  .raisons { font-size: 13px; line-height: 1.8; color: #d1d7db; }
+  .raisons div { padding: 6px 0; }
+  .code-section { background: #111b21; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #ff0080; }
+  .code-section h3 { color: #ff0080; font-size: 14px; margin-bottom: 10px; cursor: pointer; }
+  .code-block { background: #0a1218; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: #e9edef; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin-top: 8px; }
+  .footer { text-align: center; font-size: 10px; color: #8696a0; margin-top: 20px; padding-top: 12px; border-top: 1px solid #ff0080; }
+  .hidden { display: none; }
+  .connected { background: rgba(0, 255, 128, 0.1); border: 1px solid #00ff80; color: #00ff80; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚡ DAKIVOX</h1>
+      <p>OUTIL PRIVÉ - ACCÈS RESTREINT</p>
+    </div>
+
+    <div id="loginView">
+      <div class="info-box">🔐 Accès réservé. Entre le mot de passe Dakivox pour continuer.</div>
+      <input type="password" id="passwordInput" placeholder="Mot de passe..." />
+      <button onclick="login()">🔓 Déverrouiller</button>
+      <div id="loginError" style="color:#ff3366;text-align:center;font-size:13px;margin-top:10px;"></div>
+    </div>
+
+    <div id="mainView" class="hidden">
+      <div class="connected">✅ Connecté à Dakivox — Session active</div>
+      <input type="text" id="urlInput" placeholder="https://site-suspect.com/..." />
+      <button onclick="analyserAvecCode()">🔍 Analyser + Extraire le code</button>
+      <button class="ghost" onclick="logout()" style="margin-top:10px;">🔒 Se déconnecter</button>
+      <div id="resultatZone"></div>
+      <div id="codeZone"></div>
+    </div>
+
+    <div class="footer">⚡ DAKIVOX - Outil privé d'analyse</div>
+  </div>
+
+<script>
+  var DRAINBOT_URL = 'https://drainbot.onrender.com';
+  var MOT_DE_PASSE = '';
+
+  function login() {
+    var pwd = document.getElementById('passwordInput').value.trim();
+    if (!pwd) {
+      document.getElementById('loginError').textContent = 'Entre un mot de passe';
+      return;
+    }
+    // Test : appel à une route privee pour verifier
+    fetch(DRAINBOT_URL + '/code?url=https://google.com', {
+      headers: { 'Authorization': 'Bearer ' + pwd }
+    })
+      .then(function(r) {
+        if (r.status === 401) throw new Error('Mot de passe incorrect');
+        return r.json();
+      })
+      .then(function(data) {
+        MOT_DE_PASSE = pwd;
+        localStorage.setItem('dakivox_pwd', pwd);
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('mainView').classList.remove('hidden');
+      })
+      .catch(function(e) {
+        document.getElementById('loginError').textContent = '❌ ' + e.message;
+      });
+  }
+
+  function logout() {
+    MOT_DE_PASSE = '';
+    localStorage.removeItem('dakivox_pwd');
+    location.reload();
+  }
+
+  function analyserAvecCode() {
+    var url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('Colle un lien'); return; }
+    if (!url.startsWith('http')) url = 'http://' + url;
+
+    document.getElementById('resultatZone').innerHTML = '<div class="result"><div class="score">⏳</div><div class="verdict">Analyse...</div></div>';
+    document.getElementById('codeZone').innerHTML = '';
+
+    fetch(DRAINBOT_URL + '/code?url=' + encodeURIComponent(url), {
+      headers: { 'Authorization': 'Bearer ' + MOT_DE_PASSE }
+    })
+      .then(function(r) {
+        if (r.status === 401) throw new Error('Session expiree, reconnecte-toi');
+        return r.json();
+      })
+      .then(function(data) {
+        if (data.error) { document.getElementById('resultatZone').innerHTML = '<div class="result"><div class="verdict" style="color:#ff3366">❌ ' + data.error + '</div></div>'; return; }
+        afficherResultat(data);
+        afficherCode(data.code);
+      })
+      .catch(function(e) {
+        document.getElementById('resultatZone').innerHTML = '<div class="result"><div class="verdict" style="color:#ff3366">❌ ' + e.message + '</div></div>';
+      });
+  }
+
+  function afficherResultat(data) {
+    var html = '<div class="result">';
+    html += '<div class="score">' + data.score + '/100</div>';
+    html += '<div class="verdict">' + data.verdict + '</div>';
+    html += '<div class="raisons">';
+    data.signaux.forEach(function(s) { html += '<div>• ' + s + '</div>'; });
+    html += '</div></div>';
+    document.getElementById('resultatZone').innerHTML = html;
+  }
+
+  function afficherCode(code) {
+    var html = '';
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">📄 HTML COMPLET (' + code.html_complet.length + ' caractères) — Cliquer</h3>';
+    html += '<div class="code-block">' + escapeHtml(code.html_complet.substring(0, 10000)) + (code.html_complet.length > 10000 ? '\n\n... [TRONQUÉ]' : '') + '</div></div>';
+
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">⚡ SCRIPTS (' + code.scripts.length + ') — Cliquer</h3>';
+    html += '<div class="code-block">';
+    code.scripts.forEach(function(s, i) {
+      html += '--- SCRIPT ' + (i+1) + ' (' + s.type + ') ---\n';
+      if (s.src) html += 'Source : ' + s.src + '\n';
+      if (s.contenu) html += escapeHtml(s.contenu) + '\n';
+      html += '\n';
+    });
+    html += '</div></div>';
+
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">🎨 STYLES (' + code.styles.length + ') — Cliquer</h3>';
+    html += '<div class="code-block">';
+    code.styles.forEach(function(s, i) {
+      html += '--- STYLE ' + (i+1) + ' (' + s.type + ') ---\n';
+      if (s.href) html += 'Source : ' + s.href + '\n';
+      if (s.contenu) html += escapeHtml(s.contenu) + '\n';
+      html += '\n';
+    });
+    html += '</div></div>';
+
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">📝 FORMULAIRES (' + code.formulaires.length + ') — Cliquer</h3>';
+    html += '<div class="code-block">';
+    code.formulaires.forEach(function(f, i) {
+      html += '--- FORMULAIRE ' + (i+1) + ' ---\n';
+      html += 'Action : ' + f.action + '\n';
+      html += 'Méthode : ' + f.method + '\n';
+      f.inputs.forEach(function(inp) { html += '  Input [' + inp.type + '] : ' + inp.name + '\n'; });
+      html += '\n';
+    });
+    html += '</div></div>';
+
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">🌐 RESSOURCES (' + code.ressources.length + ') — Cliquer</h3>';
+    html += '<div class="code-block">';
+    code.ressources.forEach(function(r, i) { html += '[' + r.type + '] ' + r.url + '\n'; });
+    html += '</div></div>';
+
+    html += '<div class="code-section"><h3 onclick="toggleSection(this)">🏷️ META (' + code.meta.length + ') — Cliquer</h3>';
+    html += '<div class="code-block">';
+    code.meta.forEach(function(m) { html += m.name + ' : ' + m.content + '\n'; });
+    html += '</div></div>';
+
+    document.getElementById('codeZone').innerHTML = html;
+  }
+
+  function toggleSection(el) {
+    var block = el.nextElementSibling;
+    if (block.style.display === 'none') block.style.display = 'block';
+    else block.style.display = 'none';
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Auto-login si deja connecte
+  window.onload = function() {
+    var saved = localStorage.getItem('dakivox_pwd');
+    if (saved) {
+      document.getElementById('passwordInput').value = saved;
+      // Test silencieux
+      fetch(DRAINBOT_URL + '/code?url=https://google.com', { headers: { 'Authorization': 'Bearer ' + saved } })
+        .then(function(r) {
+          if (r.status !== 401) {
+            MOT_DE_PASSE = saved;
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+          }
+        }).catch(function() {});
+    }
+  };
+</script>
+</body>
+</html>
